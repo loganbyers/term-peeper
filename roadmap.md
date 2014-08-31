@@ -74,15 +74,18 @@ Numbered Versions
 * Download, view, and manually classify imagery within a GUI
 * Load multiple files into a classification queue
 * Output raw classification results to file
+* Projects in place, with save and open actions
 
 
 0.2
 ---
 
 * Automatic classification scheme in place
+* Color choices on classification
+* Project integrity checks, dynamic projects
 
 0.3
 ---
 
-* Work flow developments such as save program state, open saved saved state
-* Save classification as 'alternate', to permit for uncertain choices
+* Work flow developments
+* Change analysis
