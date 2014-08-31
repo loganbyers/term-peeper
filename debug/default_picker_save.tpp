@@ -1,0 +1,16 @@
+(dp0
+S'filequeue'
+p1
+NsS'projectname'
+p2
+NsS'imageresolution'
+p3
+NsS'outputdirectory'
+p4
+NsS'filequeueindex'
+p5
+NsS'ydimension'
+p6
+NsS'xdimension'
+p7
+Ns.
