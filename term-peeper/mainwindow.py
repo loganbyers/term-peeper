@@ -7,8 +7,8 @@
 #
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
-#  Date: 2014.08.28
-#  Modified: 2014.09.17
+#  Date: 2014.09.18
+#  Modified: 2014.09.18
 #
 ###############################################################################
 #
@@ -25,140 +25,67 @@
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 #
 ###############################################################################
-#
 
 import sys
 import os
 import pickle
+
 from PyQt4 import QtCore, QtGui, uic
-import pymodis
 #import numpy as np
 
+import modis
+import termpeeperIO
 
-class DownloadMODISDialog(QtGui.QDialog):
-    """Dialog for selecting and downloading MODIS scenes"""
-  
+###############################################################################
+
+class PickerWidget(QtGui.QGraphicsView):
+    """Widget for viewing and making picks"""
+    
     def __init__(self,parent=None):
-        """Initialize dialog and show it
+        """Initialize object, create member variables
         
         Parameters
         ----------
         
-        parent : QtGui.QDialog
-            A parent to inherit from
-        
-        
-        Post
-        ----
-        
-        If user inputs data and accepts, MODIS scenes are downloaded
-        into the chosen directory.
+        parent : QtGui.QGraphicsView
+            a parent to inherit from
         
         """
-        ## UI GEOMETRY AND SETUP##
-        super(DownloadMODISDialog,self).__init__(parent)
-        uic.loadUi("ui/data_download_dialog.ui",self)
+        super(PickerWidget,self).__init__(parent)
+        
+        # PUBLIC MEMBER VARIABLES #
+        self.imagePixmap = None
+        self.classPixmap = None
+        self.classTransparency = None
+        self.classColors = None
+        self.origin = None
+        
+        self.scene = QtGui.QGraphicsScene()
+        self.setScene(self.scene)
+        
+        
+        self.updateImage()
         self.show()
-        self.tilesLineEdit.setText("h16v01")
+    
+    def updateImage(self,filename=None):
+        #remove old image
+        del(self.imagePixmap)
+        #make new pixmap
+        if not filename:
+            self.imagePixmap = QtGui.QPixmap("debug/test_image_KS.tif")
+        else:
+            self.imagePixmap = QtGui.QPixmap(filename)
+        #add new pixmap
+        self.scene.addPixmap(self.imagePixmap)
+        #scale as necessary
+        #?????
         
-        ## SIGNAL CONNECTIONS ##
-        self.saveDirectoryToolButton.clicked.connect(self.slotSaveDirectoryToolButton)
-        self.startDateCalendar.selectionChanged.connect(self.slotStartDateSelectionChanged)
-        self.endDateCalendar.selectionChanged.connect(self.slotEndDateSelectionChanged)
-        self.buttonBox.accepted.connect(self.slotAccepted)
-        self.buttonBox.rejected.connect(self.slotRejected)
-        
+    def updateClassification(self,class_array):
+        """Updates the representation of the classification"""
+        pass
 
-        ## PUBLIC MEMBER VARIABLES ##
-        self.downloadDirectory = None
-        self.downloadTile = None
-        self.startDate = None
-        self.endDate = None
-    
-    ### SLOT DEFINITIONS ###
-    def slotSaveDirectoryToolButton(self):
-        """Runs a file dialog to choose a directory"""
-        print ("Opening MODIS Save Directory Dialog")
-        self.saveDirectoryLineEdit.setText(QtGui.QFileDialog.getExistingDirectory())
-        pass
-      
-    def slotStartDateSelectionChanged(self):
-        """Updates the start date of image acquisition"""
-        print ("Changed Start Date Selection")
-        self.startDate = str(self.startDateCalendar.selectedDate().toString("yyyy-MM-dd"))
-        pass
-    
-    def slotEndDateSelectionChanged(self):
-        """Updates the end date of image acquisition"""
-        print ("Changed End Date Selection")
-        self.endDate = str(self.endDateCalendar.selectedDate().toString("yyyy-MM-dd"))
-        pass
-    
-    def slotAccepted(self):
-        """Stores data from user fields and downloads as specified
-        
-        Post
-        ----
-        
-        Member variables are updated to user's values.
-        Chosen data is downloaded to the image directory
-        
-        """
-        print ("Accepted; starting to download")
-        self.downloadDirectory = str(self.saveDirectoryLineEdit.text())
-        if not self.downloadDirectory[-1] == os.path.sep:
-            self.downloadDirectory = self.downloadDirectory+os.path.sep
-        self.tiles = str(self.tilesLineEdit.text())
-        self.startDate = str(self.startDateCalendar.selectedDate().toString("yyyy-MM-dd"))
-        self.endDate = str(self.endDateCalendar.selectedDate().toString("yyyy-MM-dd"))
-        print self.downloadDirectory
-        print self.tiles
-        print self.startDate
-        print self.endDate
-        self.downloadData()
-        pass
-    
-    def slotRejected(self):
-        """Cleans up when dialog is quit without downloading"""
-        print ("Rejected; exiting dialog")
-        pass
-    
 
-    ### DOWNLOADING ###
-    def downloadData(self):
-        if not os.path.exists(self.downloadDirectory):
-            os.mkdir(self.downloadDirectory)
-        #start and end seem reversed, but that is how pymodis works --backwards
-        dm = pymodis.downmodis.downModis(destinationFolder=self.downloadDirectory,
-                                         path="MOLT", product="MOD09GA.005",
-                                         tiles="h16v01", today=self.endDate,
-                                         enddate = self.startDate)
-        dm.connect()
-        print "Connection Attempts: " + str(dm.nconnection)
-        
-        dm.getAllDays()
-        downloads = []
-        for day in dm.getListDays():
-            print day
-            files = dm.getFilesList(day)
-            print files
-            for f in files:
-                downloads.append((f,day))
-        numDownload = len(downloads)
-        print  "Files to Download: " + str(numDownload)
-        
-        self.progress = QtGui.QProgressBar()
-        self.progress.setRange(0,numDownload)
-        self.progress.setValue(0)
-        self.progress.show()
-        for f, d in downloads:
-            print "DL: " + f
-            self.progress.setValue(self.progress.value()+1)
-            dm.downloadFile(f,self.downloadDirectory+f,d)
-        
-        
-        
-        
+###############################################################################             
 class MainWindowGui(QtGui.QMainWindow):
     
     def __init__(self,parent=None):
@@ -182,7 +109,7 @@ class MainWindowGui(QtGui.QMainWindow):
         
         ## UI GEOMETRY AND SETUP##
         super(MainWindowGui,self).__init__(parent)
-        uic.loadUi("ui/test_1.ui",self)
+        uic.loadUi("ui/main_window.ui",self)
         self.show()
         
         ## SIGNAL CONNECTIONS ##
@@ -262,8 +189,10 @@ class MainWindowGui(QtGui.QMainWindow):
     def slotSaveAs(self):
         """Save the project as a new, or existing, file"""
         print ("Saving state as ...")
-        fname = QtGui.QFileDialog.getSaveFileName(parent=None,
-                      caption="Save Project As")
+        fname = str( QtGui.QFileDialog.getSaveFileName(parent=None,
+                      caption="Save Project As"))
+        print fname
+        self.projectSaveFileName = fname
         self.saveProject(fname)
         
     
@@ -271,21 +200,37 @@ class MainWindowGui(QtGui.QMainWindow):
         """Create a new project, running the new project dialog"""
         print ("Starting new project dialog")
         #save file dialog
-        self.openNewProject()
-        #new project dialog
-      #  self.newProjectDialog()
-        ##name, directory, download data/existing data, shapefile/spatial subset
+        termpeeperIO.openNewProject()
         
     
     def slotOpenProject(self):
-        """Open and existing project"""
-        print ("Choose the project to open")
-        fname = QtGui.QFileDialog.getOpenFileName(parent=None,
-                      caption="Open Existing Project",
-                      filter="term-peeper project file (*.tpp);;Any file (*)")
-        print (str(fname))
-        self.openProject(str(fname))
+        """Open and existing project
         
+        Post
+        ----
+    
+        Parameters from a file are loaded into the variables of the
+        current class.
+        
+        """
+        print ("Choose the project to open")
+        fname = str( QtGui.QFileDialog.getOpenFileName(parent=None,
+                      caption="Open Existing Project",
+                      filter="term-peeper project file (*.tpp);;Any file (*)"))
+        print (fname)
+        saveDict = termpeeperIO.unpackProject(fname)
+
+        try:
+            self.projectName = saveDict['projectname']
+            self.fileQueue = saveDict['filequeue']
+            self.fileQueueIndex = saveDict['filequeueindex']
+            self.outputDirectory = saveDict['outputdirectory']
+            self.imageXDimension = saveDict['xdimension']
+            self.imageYDimension = saveDict['ydimension']
+            self.imageResolution = saveDict['imageresolution']
+            self.projectSaveFileName = fname
+        except:
+            raise BaseException("Could not load all settings from project file, check project integrity")
     
     def slotHelp(self):
         """Display help for the program"""
@@ -310,7 +255,7 @@ class MainWindowGui(QtGui.QMainWindow):
     def slotDownloadMODIS(self):
         """Open a dialof for downloading MIDIS data"""
         print ("Downloading MODIS Data")
-        self._DMD = DownloadMODISDialog()
+        self._DMD = modis.DownloadMODISDialog()
         
         
         
@@ -347,6 +292,7 @@ class MainWindowGui(QtGui.QMainWindow):
         The next image is loaded and the GUI is reset to its default state.
         
         """
+        print ("accepting and moving to next image")
         #store values from GUI
         self.updateUiValues()
         #save all settings to file
@@ -357,8 +303,8 @@ class MainWindowGui(QtGui.QMainWindow):
         if self.fileQueueIndex:
             self.fileQueueIndex = self.fileQueueIndex+1
             if self.fileQueueIndex < len(self.fileQueue):
-                self.loadImage()
-                print ("accepting and moving to next image")
+                self.imageView.updateImage(self.fileQueue[self.fileQueueIndex])
+                
             else:
                 self.outputProject()
                 print ("Finished the file queue -- project complete!")
@@ -407,124 +353,26 @@ class MainWindowGui(QtGui.QMainWindow):
         if self.overlayCheck.isChecked():
           print ("Transparency adjusted to " + str(self.overlaySlider.value()))
           
+    ### IO FUNCTIONS ###
     
-    ### PROJECT IO DIALOGS ###
-
-    def openNewProjectWizard(self,filename=None):
-        """Opens the new project wizard"""
-        return 
-    
-    ### PROJECT IO FUNCTIONS ###
-    
-    def openProject(self,filename):
-        """Opens an existing project
-        
-        Parameters
-        ----------
-        
-        filename : str
-            the file to open, ideally would be a .tpp file
-        
-        
-        Post
-        ----
-        
-        Parameters from file are loaded into the variables of the
-        current class.
-        
-        Raises
-        ------
-        
-        IOError if file can not be opened
-        
-        BaseException if file could not be loaded or is corruption
-        
-        
-        Note
-        ----
-        
-        File IO for this project uses the pickle module.
-        Relevant variables are stored in a dictionary, and then pickled.
-        
-        
-        """
-        try:
-            fin = open(filename,'r')
-        except:
-            raise IOError("Could not open file " + filename)
-        try:
-            saveDict = pickle.load(fin)
-        except:
-            raise BaseException("Could not load the project file, check for file corruption")
-        try:
-            self.projectName = saveDict['projectname']
-            self.fileQueue = saveDict['filequeue']
-            self.fileQueueIndex = saveDict['filequeueindex']
-            self.outputDirectory = saveDict['outputdirectory']
-            self.imageXDimension = saveDict['xdimension']
-            self.imageYDimension = saveDict['ydimension']
-            self.imageResolution = saveDict['imageresolution']
-            self.projectSaveFileName = filename
-        except:
-            raise BaseException("Could not load all settings from project file, check project integrity")
-        
     def saveProject(self,filename):
-        """Saves the current state of a project to a file
+        """Retrieves the current project state and saves it to file
         
         Parameters
         ----------
         
         filename : str
-            the file to save project to
+            the file to save to
             
         
         Post
         ----
         
-        Save file is written, with parameters taken from current
-        program state.
-        
-        
-        Raises
-        ------
-        
-        IOError if files could not be opened for saving or could not be saved
-        
-        
-        Notes
-        -----
-        
-        To prevent corruption and loss of the save file, a temporary
-        file is created with the suffix `.old`.
-        If file is saved without apparent errors, then this `.old` file
-        is removed and deleted.
-        If file saving does cause a problem, this `.old` file can be salvaged.
-        
-        As a reminder, saving stores the program state to a dictionary, 
-        and then this dictionary is packed with the pickle module.
+        The project file has been saved, or errors raised indicate it has not
         
         """
-        if filename == '':
-            print "Filename not specified"
-            return
-        if filename != self.projectSaveFileName:
-            try:
-                fout = open(filename,'w')
-            except:
-                raise IOError("Could not open file " + filename + " for saving")
-        else:
-            try:
-                fin = open(filename,'r')
-                foutOld = open(filename+'.old','w')
-                foutOld.write(fin.read())
-                fin.close()
-                foutOld.flush()
-                foutOld.close()
-                fout = open(filename,'w')
-            except:
-                raise IOError("Could not prepare to save over file " + filename)
- 
         saveDict = {}
+        saveDict['projectsavename'] = self.projectSaveFileName
         saveDict['projectname'] = self.projectName
         saveDict['filequeue'] = self.fileQueue
         saveDict['filequeueindex'] = self.fileQueueIndex
@@ -532,46 +380,9 @@ class MainWindowGui(QtGui.QMainWindow):
         saveDict['xdimension'] = self.imageXDimension
         saveDict['ydimension'] = self.imageYDimension
         saveDict['imageresolution'] = self.imageResolution
+        termpeeperIO.packProject(filename,saveDict)
+       
         
-        try:
-            pickle.dump(saveDict,fout)
-            print "dumped"
-            fout.flush()
-            print "flushed"
-            fout.close()
-            print "closed"
-            os.remove(filename+'.old')
-            print "old removed"
-        except:
-            raise IOError("Could not write to file " + filename)
-
-    
-    def openNewProject(self):
-        """Opens a new project, using the wizard, and saves the file"""
-        fname = QtGui.QFileDialog.getOpenFileName(parent=None,
-                      caption="Select New Project File",
-                      filter="term-peeper project file (*.tpp)")
-        print (str(fname))
-        self.saveProject(str(fname))
-        self.projectSaveFileName = str(fname)
-        self.openNewProjectWizard(filename=str(fname))
-    
-    
-    ### OUTPUT FUNCTIONS ###        
-    
-    def outputSingleImage(self):
-        """Outputs the classification to a file"""
-        #prepare text output file
-        #prepare image output file
-        #write to text
-        #write image
-        print ("outputting single image")
-    
-    def outputProject(self):
-        """Outputs the results of an entire project to a file"""
-        print ("outputting project")
-    
-    
     ### UI FUNCTIONS ###
     
     def defaultSettings(self):
@@ -599,9 +410,10 @@ class MainWindowGui(QtGui.QMainWindow):
         else:
             self.confidence = 0
     
-    def loadImage(self):
+    def loadImage(self,filename):
         """Draws an image to the screen"""
         #change imagery pixmap
+        self.imageView.updateImage(filename)
         print ("loading image")
         
 

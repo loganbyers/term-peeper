@@ -71,10 +71,11 @@ Numbered Versions
 0.1
 ---
 
-* Download, view, and manually classify imagery within a GUI
+* Download, process, clip, resample, project MODIS data
+* View, and manually classify imagery within a GUI
 * Load multiple files into a classification queue
-* Output raw classification results to file
-* Projects in place, with save and open actions
+* Output raw classification results to files
+* Create new projects, open existing, save (as) current
 
 
 0.2
