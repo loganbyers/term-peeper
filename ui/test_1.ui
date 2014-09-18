@@ -1,32 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-#  term-peeper is a program for classifying MODIS imagery of glacier termini
-#  this file is part of term-peeper
-#
-#  Copyright 2014 Logan C Byers
-#
-#  Authors: Logan C Byers
-#  Contact: loganbyers@ku.edu
-#  Date: 2014.08.28
-#  Modified: 2014.08.31
-#
-###############################################################################
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-#
-###############################################################################
-#
--->
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
@@ -48,7 +20,7 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>20</x>
@@ -524,8 +496,10 @@
     </property>
     <addaction name="actionNewProject"/>
     <addaction name="actionOpenProject"/>
+    <addaction name="separator"/>
     <addaction name="actionSaveState"/>
     <addaction name="actionSaveStateAs"/>
+    <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
@@ -535,7 +509,21 @@
     <addaction name="actionHelp"/>
     <addaction name="actionAbout"/>
    </widget>
+   <widget class="QMenu" name="menuProject">
+    <property name="title">
+     <string>Project</string>
+    </property>
+    <addaction name="actionCheckProjectIntegrity"/>
+   </widget>
+   <widget class="QMenu" name="menuData">
+    <property name="title">
+     <string>Data</string>
+    </property>
+    <addaction name="actionDownloadMODIS"/>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuProject"/>
+   <addaction name="menuData"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -572,6 +560,16 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="actionCheckProjectIntegrity">
+   <property name="text">
+    <string>Check Project Integrity</string>
+   </property>
+  </action>
+  <action name="actionDownloadMODIS">
+   <property name="text">
+    <string>Download MODIS....</string>
    </property>
   </action>
  </widget>

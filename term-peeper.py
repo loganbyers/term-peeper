@@ -8,7 +8,7 @@
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.08.28
-#  Modified: 2014.08.31
+#  Modified: 2014.09.17
 #
 ###############################################################################
 #
@@ -26,17 +26,117 @@
 #
 ###############################################################################
 #
-
+# 
 import sys
+import os
 import pickle
 from PyQt4 import QtCore, QtGui, uic
-#import pymodis
+import pymodis
 #import numpy as np
 
 
+class DownloadMODISDialog(QtGui.QDialog):
+  
+    def __init__(self,parent=None):
+        ## UI GEOMETRY AND SETUP##
+        super(DownloadMODISDialog,self).__init__(parent)
+        uic.loadUi("ui/data_download_dialog.ui",self)
+        self.show()
+        self.tilesLineEdit.setText("h16v01")
+        
+        ## SIGNAL CONNECTIONS ##
+        self.saveDirectoryToolButton.clicked.connect(self.slotSaveDirectoryToolButton)
+        self.startDateCalendar.selectionChanged.connect(self.slotStartDateSelectionChanged)
+        self.endDateCalendar.selectionChanged.connect(self.slotEndDateSelectionChanged)
+        self.buttonBox.accepted.connect(self.slotAccepted)
+        self.buttonBox.rejected.connect(self.slotRejected)
+        
+
+        ## PUBLIC MEMBER VARIABLES ##
+        self.downloadDirectory = None
+        self.downloadTile = None
+        self.startDate = None
+        self.endDate = None
+    
+    ### SLOT DEFINITIONS ###
+    def slotSaveDirectoryToolButton(self):
+        print ("Opening MODIS Save Directory Dialog")
+        self.saveDirectoryLineEdit.setText(QtGui.QFileDialog.getExistingDirectory())
+        pass
+      
+    def slotStartDateSelectionChanged(self):
+        print ("Changed Start Date Selection")
+        self.startDate = str(self.startDateCalendar.selectedDate().toString("yyyy-MM-dd"))
+        pass
+    
+    def slotEndDateSelectionChanged(self):
+        print ("Changed End Date Selection")
+        self.endDate = str(self.endDateCalendar.selectedDate().toString("yyyy-MM-dd"))
+        pass
+    
+    def slotAccepted(self):
+        print ("Accepted; starting to download")
+        self.downloadDirectory = str(self.saveDirectoryLineEdit.text())
+        if not self.downloadDirectory[-1] == os.path.sep:
+            self.downloadDirectory = self.downloadDirectory+os.path.sep
+        self.tiles = str(self.tilesLineEdit.text())
+        self.startDate = str(self.startDateCalendar.selectedDate().toString("yyyy-MM-dd"))
+        self.endDate = str(self.endDateCalendar.selectedDate().toString("yyyy-MM-dd"))
+        print self.downloadDirectory
+        print self.tiles
+        print self.startDate
+        print self.endDate
+        self.downloadData()
+        pass
+    
+    def slotRejected(self):
+        print ("Rejected; exiting dialog")
+        pass
+    
+
+    ### DOWNLOADING ###
+    def downloadData(self):
+        if not os.path.exists(self.downloadDirectory):
+            os.mkdir(self.downloadDirectory)
+        #start and end seem reversed, but that is how pymodis works --backwards
+        dm = pymodis.downmodis.downModis(destinationFolder=self.downloadDirectory,
+                                         path="MOLT", product="MOD09GA.005",
+                                         tiles="h16v01", today=self.endDate,
+                                         enddate = self.startDate)
+        dm.connect()
+        print "Connection Attempts: " + str(dm.nconnection)
+        
+        dm.getAllDays()
+        downloads = []
+        for day in dm.getListDays():
+            print day
+            files = dm.getFilesList(day)
+            print files
+            for f in files:
+                downloads.append((f,day))
+        numDownload = len(downloads)
+        print  "Files to Download: " + str(numDownload)
+        
+        self.progress = QtGui.QProgressBar()
+        self.progress.setRange(0,numDownload)
+        self.progress.setValue(0)
+        self.progress.show()
+        for f, d in downloads:
+            print "DL: " + f
+            self.progress.setValue(self.progress.value()+1)
+            dm.downloadFile(f,self.downloadDirectory+f,d)
+        
+        
+        
+        
 class MainWindowGui(QtGui.QMainWindow):
     
     def __init__(self,outdir="",parent=None):
+        """
+            Initialize the GUI window, setting up connections and
+            creating member variables.
+        
+        """
         ## UI GEOMETRY AND SETUP##
         super(MainWindowGui,self).__init__(parent)
         uic.loadUi("ui/test_1.ui",self)
@@ -44,13 +144,20 @@ class MainWindowGui(QtGui.QMainWindow):
         
         ## SIGNAL CONNECTIONS ##
         #menu actions
+        ##File
         self.actionQuit.triggered.connect(self.slotQuitProgram)
         self.actionSaveState.triggered.connect(self.slotSave)
         self.actionSaveStateAs.triggered.connect(self.slotSaveAs)
         self.actionNewProject.triggered.connect(self.slotNewProject)
         self.actionOpenProject.triggered.connect(self.slotOpenProject)
+        ##Project 
+        self.actionCheckProjectIntegrity.triggered.connect(self.slotCheckProjectIntegrity)
+        ##Data
+        self.actionDownloadMODIS.triggered.connect(self.slotDownloadMODIS)
+        ##Help
         self.actionHelp.triggered.connect(self.slotHelp)
-        self.actionAbout.triggered.connect(self.slotAbout)        
+        self.actionAbout.triggered.connect(self.slotAbout)
+        
         #button clicks
         self.autoClassifyButton.clicked.connect(self.slotAutoClassify)
         self.manualClassifyButton.clicked.connect(self.slotManualClassify)
@@ -60,6 +167,7 @@ class MainWindowGui(QtGui.QMainWindow):
         self.acceptButton.clicked.connect(self.slotAccept)
         self.clearButton.clicked.connect(self.slotClear)
         self.saveAltButton.clicked.connect(self.slotSaveAlt)
+        
         #confidence selection
         self.cRadio0.toggled.connect(self.slotConfidenceToggled)
         self.cRadio1.toggled.connect(self.slotConfidenceToggled)
@@ -67,6 +175,7 @@ class MainWindowGui(QtGui.QMainWindow):
         self.cRadio3.toggled.connect(self.slotConfidenceToggled)
         self.cRadio4.toggled.connect(self.slotConfidenceToggled)
         self.cRadio5.toggled.connect(self.slotConfidenceToggled)
+        
         #graphics options
         self.overlayCheck.stateChanged.connect(self.slotOverlayOnOff)
         self.overlaySlider.valueChanged.connect(self.slotOverlayTransparency)
@@ -85,6 +194,7 @@ class MainWindowGui(QtGui.QMainWindow):
         self.imageResolution = None #edge-length of pixels in real world
         self.classification = None #array of classification
         self.classificationSource = None #array of how classification determined
+       
         
         ## STARTUP ##
         self.defaultSettings()
@@ -138,6 +248,16 @@ class MainWindowGui(QtGui.QMainWindow):
             print ("Could not open LICENSE, go to http://www.gnu.org/licenses/gpl-3.0.txt")
     
     
+    def slotCheckProjectIntegrity(self):
+        print ("Checking Project Integrity")
+        
+    
+    def slotDownloadMODIS(self):
+        print ("Downloading MODIS Data")
+        self._DMD = DownloadMODISDialog()
+        
+        
+        
     ### SLOT DEFINITIONS -- BUTTONS ###
     
     def slotAutoClassify(self):
