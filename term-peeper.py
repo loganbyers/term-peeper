@@ -26,7 +26,7 @@
 #
 ###############################################################################
 #
-# 
+
 import sys
 import os
 import pickle
@@ -36,8 +36,25 @@ import pymodis
 
 
 class DownloadMODISDialog(QtGui.QDialog):
+    """Dialog for selecting and downloading MODIS scenes"""
   
     def __init__(self,parent=None):
+        """Initialize dialog and show it
+        
+        Parameters
+        ----------
+        
+        parent : QtGui.QDialog
+            A parent to inherit from
+        
+        
+        Post
+        ----
+        
+        If user inputs data and accepts, MODIS scenes are downloaded
+        into the chosen directory.
+        
+        """
         ## UI GEOMETRY AND SETUP##
         super(DownloadMODISDialog,self).__init__(parent)
         uic.loadUi("ui/data_download_dialog.ui",self)
@@ -60,21 +77,33 @@ class DownloadMODISDialog(QtGui.QDialog):
     
     ### SLOT DEFINITIONS ###
     def slotSaveDirectoryToolButton(self):
+        """Runs a file dialog to choose a directory"""
         print ("Opening MODIS Save Directory Dialog")
         self.saveDirectoryLineEdit.setText(QtGui.QFileDialog.getExistingDirectory())
         pass
       
     def slotStartDateSelectionChanged(self):
+        """Updates the start date of image acquisition"""
         print ("Changed Start Date Selection")
         self.startDate = str(self.startDateCalendar.selectedDate().toString("yyyy-MM-dd"))
         pass
     
     def slotEndDateSelectionChanged(self):
+        """Updates the end date of image acquisition"""
         print ("Changed End Date Selection")
         self.endDate = str(self.endDateCalendar.selectedDate().toString("yyyy-MM-dd"))
         pass
     
     def slotAccepted(self):
+        """Stores data from user fields and downloads as specified
+        
+        Post
+        ----
+        
+        Member variables are updated to user's values.
+        Chosen data is downloaded to the image directory
+        
+        """
         print ("Accepted; starting to download")
         self.downloadDirectory = str(self.saveDirectoryLineEdit.text())
         if not self.downloadDirectory[-1] == os.path.sep:
@@ -90,6 +119,7 @@ class DownloadMODISDialog(QtGui.QDialog):
         pass
     
     def slotRejected(self):
+        """Cleans up when dialog is quit without downloading"""
         print ("Rejected; exiting dialog")
         pass
     
@@ -131,12 +161,25 @@ class DownloadMODISDialog(QtGui.QDialog):
         
 class MainWindowGui(QtGui.QMainWindow):
     
-    def __init__(self,outdir="",parent=None):
-        """
-            Initialize the GUI window, setting up connections and
-            creating member variables.
+    def __init__(self,parent=None):
+        """Initialize GUI window, set up connections, make member variables
+        
+        Parameters
+        ----------
+        
+        parent : QtGui.QMainWindow
+            A parent to inherit from
+        
+        
+        Post
+        ----
+        
+        Main window is loaded from ui file and drawn on screen.
+        Signals and slots are connected.
+        Public member variables are created, and self.defaultSettings() is ran.  
         
         """
+        
         ## UI GEOMETRY AND SETUP##
         super(MainWindowGui,self).__init__(parent)
         uic.loadUi("ui/test_1.ui",self)
@@ -203,43 +246,54 @@ class MainWindowGui(QtGui.QMainWindow):
     ### SLOT DEFINITIONS -- MENUS ###
     
     def slotQuitProgram(self):
+        """Cleans up when the program is quit"""
         print ("Quitting program")
         QtGui.qApp.quit()
     
     def slotSave(self):
+        """Save the project, using a dialog if project file does not exist"""
+        print ("Saving program")
         if self.projectSaveFileName:
             self.saveProject(self.projectSaveFileName)
         else:
             self.slotSaveAs()
-        print ("Saving state of program")
+        
     
     def slotSaveAs(self):
+        """Save the project as a new, or existing, file"""
+        print ("Saving state as ...")
         fname = QtGui.QFileDialog.getSaveFileName(parent=None,
                       caption="Save Project As")
         self.saveProject(fname)
-        print ("Saving state as ...")
+        
     
     def slotNewProject(self):
+        """Create a new project, running the new project dialog"""
+        print ("Starting new project dialog")
         #save file dialog
         self.openNewProject()
         #new project dialog
       #  self.newProjectDialog()
         ##name, directory, download data/existing data, shapefile/spatial subset
-        print ("Starting new project dialog")
+        
     
     def slotOpenProject(self):
+        """Open and existing project"""
+        print ("Choose the project to open")
         fname = QtGui.QFileDialog.getOpenFileName(parent=None,
                       caption="Open Existing Project",
                       filter="term-peeper project file (*.tpp);;Any file (*)")
         print (str(fname))
         self.openProject(str(fname))
-        print ("Choose the project to open")
+        
     
     def slotHelp(self):
+        """Display help for the program"""
         #help dialog/display
         print ("Help on how to use the program")
     
     def slotAbout(self):
+        """Display information about the program, including license"""
         #about dialog and license information
         try:
             with open("LICENSE.md", 'r') as fin:
@@ -249,10 +303,12 @@ class MainWindowGui(QtGui.QMainWindow):
     
     
     def slotCheckProjectIntegrity(self):
+        """Run a test that checks if project is valid"""
         print ("Checking Project Integrity")
         
     
     def slotDownloadMODIS(self):
+        """Open a dialof for downloading MIDIS data"""
         print ("Downloading MODIS Data")
         self._DMD = DownloadMODISDialog()
         
@@ -261,21 +317,36 @@ class MainWindowGui(QtGui.QMainWindow):
     ### SLOT DEFINITIONS -- BUTTONS ###
     
     def slotAutoClassify(self):
+        """Runs the auto classify function on the currently loaded image"""
         print ("running auto classify")
 
     def slotManualClassify(self):
+        """Run a manual classification interface on the current image"""
         print ("running manual classify")
         
     def slotLastClassify(self):
+        """Set the classification to that of the previously accepted image"""
         print ("running last classify")
         
     def slotUndo(self):
+        """Sometimes life gives you second chances"""
         print ("undoing last action")
         
     def slotRedo(self):
+        """Relive your greatest mistakes"""
         print ("redoing last action")
         
     def slotAccept(self):
+        """Grab classification, generate output, move to next image
+        
+        Post
+        ----
+        
+        All stored settings regarding classification are recorded to a file.
+        The image queue is advanced.
+        The next image is loaded and the GUI is reset to its default state.
+        
+        """
         #store values from GUI
         self.updateUiValues()
         #save all settings to file
@@ -293,12 +364,15 @@ class MainWindowGui(QtGui.QMainWindow):
                 print ("Finished the file queue -- project complete!")
     
     def slotClear(self):
+        """Resets the GUI to its default state"""
         #question decision to clear
         #reset settings
-        self.defaultSettings()
         print ("clearing changes to classification")
+        self.defaultSettings()
+       
     
     def slotSaveAlt(self):
+        """Saves the classification to an alternate output file"""
         #write
         print ("saving as alternate")
     
@@ -306,6 +380,7 @@ class MainWindowGui(QtGui.QMainWindow):
     ### SLOT DEFINITIONS -- CONFIDENCE ###
     
     def slotConfidenceToggled(self):
+        """Sets confidence to user's choice"""
         if self.cRadio0.isChecked():
             self.confidence = 0
         if self.cRadio1.isChecked():
@@ -324,9 +399,11 @@ class MainWindowGui(QtGui.QMainWindow):
     ### SLOT DEFINITIONS -- GRAPHIC DISPLAY ###
     
     def slotOverlayOnOff(self):
+        """Modifies whether the classification overlay is drawn"""
         print ("Class overlay is " + str(self.overlayCheck.isChecked()))
     
     def slotOverlayTransparency(self):
+        """Changes the transparency of the classification overlay"""
         if self.overlayCheck.isChecked():
           print ("Transparency adjusted to " + str(self.overlaySlider.value()))
           
@@ -334,11 +411,43 @@ class MainWindowGui(QtGui.QMainWindow):
     ### PROJECT IO DIALOGS ###
 
     def openNewProjectWizard(self,filename=None):
+        """Opens the new project wizard"""
         return 
     
     ### PROJECT IO FUNCTIONS ###
     
     def openProject(self,filename):
+        """Opens an existing project
+        
+        Parameters
+        ----------
+        
+        filename : str
+            the file to open, ideally would be a .tpp file
+        
+        
+        Post
+        ----
+        
+        Parameters from file are loaded into the variables of the
+        current class.
+        
+        Raises
+        ------
+        
+        IOError if file can not be opened
+        
+        BaseException if file could not be loaded or is corruption
+        
+        
+        Note
+        ----
+        
+        File IO for this project uses the pickle module.
+        Relevant variables are stored in a dictionary, and then pickled.
+        
+        
+        """
         try:
             fin = open(filename,'r')
         except:
@@ -360,6 +469,44 @@ class MainWindowGui(QtGui.QMainWindow):
             raise BaseException("Could not load all settings from project file, check project integrity")
         
     def saveProject(self,filename):
+        """Saves the current state of a project to a file
+        
+        Parameters
+        ----------
+        
+        filename : str
+            the file to save project to
+            
+        
+        Post
+        ----
+        
+        Save file is written, with parameters taken from current
+        program state.
+        
+        
+        Raises
+        ------
+        
+        IOError if files could not be opened for saving or could not be saved
+        
+        
+        Notes
+        -----
+        
+        To prevent corruption and loss of the save file, a temporary
+        file is created with the suffix `.old`.
+        If file is saved without apparent errors, then this `.old` file
+        is removed and deleted.
+        If file saving does cause a problem, this `.old` file can be salvaged.
+        
+        As a reminder, saving stores the program state to a dictionary, 
+        and then this dictionary is packed with the pickle module.
+        
+        """
+        if filename == '':
+            print "Filename not specified"
+            return
         if filename != self.projectSaveFileName:
             try:
                 fout = open(filename,'w')
@@ -400,6 +547,7 @@ class MainWindowGui(QtGui.QMainWindow):
 
     
     def openNewProject(self):
+        """Opens a new project, using the wizard, and saves the file"""
         fname = QtGui.QFileDialog.getOpenFileName(parent=None,
                       caption="Select New Project File",
                       filter="term-peeper project file (*.tpp)")
@@ -412,6 +560,7 @@ class MainWindowGui(QtGui.QMainWindow):
     ### OUTPUT FUNCTIONS ###        
     
     def outputSingleImage(self):
+        """Outputs the classification to a file"""
         #prepare text output file
         #prepare image output file
         #write to text
@@ -419,12 +568,14 @@ class MainWindowGui(QtGui.QMainWindow):
         print ("outputting single image")
     
     def outputProject(self):
+        """Outputs the results of an entire project to a file"""
         print ("outputting project")
     
     
     ### UI FUNCTIONS ###
     
     def defaultSettings(self):
+        """Sets the default settings for the GUI"""
         self.classification = None
         self.classificationSource = None
         self.cRadio0.click()
@@ -433,6 +584,7 @@ class MainWindowGui(QtGui.QMainWindow):
         self.overlaySlider.setValue(50)
     
     def updateUiValues(self):
+        """Stores current GUI settings to the classes variables"""
         self.notes = str(self.noteEditor.document().toPlainText())
         if self.cRadio1.isChecked():
             self.confidence = 1
@@ -448,6 +600,7 @@ class MainWindowGui(QtGui.QMainWindow):
             self.confidence = 0
     
     def loadImage(self):
+        """Draws an image to the screen"""
         #change imagery pixmap
         print ("loading image")
         
@@ -455,6 +608,7 @@ class MainWindowGui(QtGui.QMainWindow):
 #### GLOBAL FUNCTION DEFINITIONS ####    
 
 def main():
+    """Main execution function, draws main window"""
     app = QtGui.QApplication(sys.argv)
     window = MainWindowGui()
     sys.exit(app.exec_())
