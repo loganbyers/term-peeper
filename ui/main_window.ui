@@ -523,7 +523,6 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionNewProject"/>
     <addaction name="actionOpenProject"/>
     <addaction name="separator"/>
     <addaction name="actionSaveState"/>
@@ -542,6 +541,7 @@
     <property name="title">
      <string>Project</string>
     </property>
+    <addaction name="actionNewProject"/>
     <addaction name="actionCheckProjectIntegrity"/>
    </widget>
    <widget class="QMenu" name="menuData">

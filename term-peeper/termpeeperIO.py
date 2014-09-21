@@ -8,7 +8,7 @@
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.18
-#  Modified: 2014.09.18
+#  Modified: 2014.09.21
 #
 ###############################################################################
 #
@@ -29,15 +29,219 @@
 import pickle
 import os
 
-from PyQt4 import QtGui
+from PyQt4 import QtGui, uic
+
+import modis
 
 ###############################################################################
 
 ### PROJECT WINDOWS ###
 
 class NewProjectWizard(QtGui.QWizard):
-    pass 
+    """Wizard for creating new project file"""
+    def __init__(self,parent=None,filename=None):
+        """Initialization function
+        
+        Parameters
+        ----------
+        
+        parent : QtGui.QWizard
+            parent to inherit
+            
+        filename : str
+            default save file
+            
+        """
+        super(NewProjectWizard,self).__init__(parent)
+        
+        self.finished.connect(self.makeProject)
+        
+        self.intro = self.addPage(self.IntroPage(self,filename))
+        self.img = self.addPage(self.ImagePage(self))
+        
+        self.setFixedSize(660,520)
+        self.show()
 
+        
+    def makeProject(self):
+        """Take values from wizard pages and make project file
+        
+        Post
+        ----
+        
+        save file is created with information from the wizard
+        
+        """
+        print "making project now"
+        self.introPage = self.page(self.intro)
+        print self.introPage.saveLineEdit.text()
+        self.imgPage = self.page(self.img)
+        
+        saveDict = {}
+        saveDict['projectsavename'] = self.introPage.saveLineEdit.text()
+        saveDict['projectname'] = self.introPage.projectNameLineEdit.text()
+        saveDict['author'] = self.introPage.authorLineEdit.text()
+        saveDict['glacier'] = self.introPage.glacierLineEdit.text()
+        saveDict['outputprefix'] = self.introPage.prefixLineEdit.text()
+        saveDict['outputdirectory'] = self.introPage.outputDirLineEdit.text()
+        saveDict['description'] = self.introPage.descriptionPlainTextEdit.toPlainText()
+        saveDict['clipfile'] = self.imgPage.clipLineEdit.text()
+        
+        saveDict = {key : str(saveDict[key]) for key in saveDict.keys()}
+        fileQueue = []
+        for i in range(self.imgPage.fileListWidget.count()):
+            fileQueue.append(str(self.imgPage.fileListWidget.item(i).text()))
+        
+        saveDict['filequeue'] = tuple(fileQueue)
+        saveDict['filequeueindex'] = 0
+        
+        #  add more info based on reading HDF xml
+        saveDict['imageresolution'] = None
+        saveDict['xdimension'] = None
+        saveDict['ydimension'] = None
+
+        print saveDict
+        
+        packProject(saveDict['projectsavename'],saveDict)
+        pass
+    
+    ### WIZARD PAGE CLASSES ###
+    
+    class IntroPage(QtGui.QWizardPage):
+        """Introductory project setup wizard page"""
+        def __init__(self,parent=None,filename=None):
+            """Initialization of class
+            
+            Parameters
+            ----------
+            
+            parent : QtGui.QWizard
+                the parent the page should belong to
+            
+            filename : str
+                the default file for saving the project
+                
+            """
+            
+            super(parent.IntroPage,self).__init__(parent)
+            uic.loadUi('ui/new_project_wizard_page_0.ui',self)
+            
+            self.saveFileOpenButton.clicked.connect(self.slotFileOpen)
+            self.outputDirOpenButton.clicked.connect(self.slotDirOpen)
+            
+            if filename:
+                self.saveLineEdit.setText(filename)
+            self.prefixLineEdit.setText('test')
+            
+            
+        def slotFileOpen(self):
+            """Open a new file dialog"""
+            fname = str( QtGui.QFileDialog.getSaveFileName(parent=None,
+                      caption="Open New Project",
+                      filter="term-peeper project file (*.tpp);;Any file (*)"))
+            self.saveLineEdit.setText(fname)
+            pass
+          
+          
+        def slotDirOpen(self):
+            """Open an existing directory dialog"""
+            dname = str( QtGui.QFileDialog.getExistingDirectory())
+            self.outputDirLineEdit.setText(dname)
+            pass
+        
+        
+        
+    class ImagePage(QtGui.QWizardPage):
+        """Wizard page for defining imagery to process"""
+        def __init__(self,parent=None):
+            """Initialization of class
+            
+            Parameters
+            ----------
+            
+            parent : QtGui.QWizard
+                the parent this page should belong to
+                
+            """
+            super(parent.ImagePage,self).__init__(parent)
+            uic.loadUi('ui/new_project_wizard_page_1.ui',self)
+            
+            self.fileListWidget.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+            self.fileListWidget.setDragEnabled(True)
+            self.fileListWidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+            self.removeListButton.clicked.connect(self.slotRemoveFromList)
+            
+            self.clipOpenFileButton.clicked.connect(self.slotClipOpenFile)
+            self.txtOpenFileButton.clicked.connect(self.slotTxtOpenFile)
+            self.txtFileToListButton.clicked.connect(self.slotTxtAddFiles)
+            self.importFileButton.clicked.connect(self.slotImportFiles)
+            self.downloadDataButton.clicked.connect(self.slotDownloadData)
+            
+            
+        
+        def slotClipOpenFile(self):
+            """Open file to clip the imagery to"""
+            fname = str( QtGui.QFileDialog.getOpenFileName(parent=None,
+                      caption="Open Mask File",
+                      filter="shapefile (.shp);;well-known type (.wkt);;Any file (*)"))
+            self.clipLineEdit.setText(fname)
+            pass
+        
+        def slotTxtOpenFile(self):
+            """Open text file that is an imagery queue"""
+            fnames = str( QtGui.QFileDialog.getOpenFileName(parent=None,
+                      caption="Open File List",
+                      filter="Any file (*)"))
+            self.txtLineEdit.setText(fnames)
+            pass
+        
+        def slotTxtAddFiles(self):
+            """Add the files specified by the text file to the list"""
+            fname = self.txtLineEdit.text()
+            if not os.path.isfile(fname):
+                print ("No text file selected")
+                return
+            
+            try:
+                fin = open(fname,'r')
+            except:
+                raise IOError("Could not open image import file\n"
+                              "Tried to open file\n"+fname)
+            try:
+                self.fileListWidget.addItems(fin.read().splitlines())
+            except:
+                print ("Could not add items during import")
+            try:
+                fin.close()
+            except:
+                raise IOError("Could not close image import file\n"
+                              "Tried to close file\n"+fname)
+            
+        
+        def slotImportFiles(self):
+            """Add existing MODIS HDF to the queue"""
+            fnames = QtGui.QFileDialog.getOpenFileNames(parent=None,
+                      caption="Open Files",
+                      filter="MODIS HDF (.hdf);;Any Files (*)")
+            for f in fnames:
+                print f
+            self.fileListWidget.addItems(fnames)
+            pass
+        
+        def slotDownloadData(self):
+            """Download MODIS data"""
+            self._DMD = modis.DownloadMODISDialog()
+            pass
+
+            
+        def slotRemoveFromList(self):
+            """Removes selected files from list"""
+            selected = self.fileListWidget.selectedItems()
+            for item in selected:
+                print item
+                self.fileListWidget.takeItem(self.fileListWidget.row(item))
+        
+            
 class ProjectIntegrityDialog(QtGui.QDialog):
     pass
   
@@ -45,18 +249,6 @@ class ProjectIntegrityDialog(QtGui.QDialog):
 
 
 ### PROJECT IO FUNCTIONS ###
-
-def openNewProject():
-    """Opens a new project using a wizard, and saves this file"""
-    fname = str( QtGui.QFileDialog.getSaveFileName(parent=None,
-                  caption="Select New Project File",
-                  filter="term-peeper project file (*.tpp)"))
-    print fname
-    packProject(fname,openNewProjectWizard(filename=fname))
-
-def openNewProjectWizard(filename=None):
-    """Opens the new project wizard"""
-    return #dict
 
 def unpackProject(filename):
     """Opens an existing project and returns a dictionary describing it
@@ -76,8 +268,8 @@ def unpackProject(filename):
     BaseException if file could not be loaded or is corrupted
     
     
-    Note
-    ----
+    Notes
+    -----
     
     File IO for this project uses the pickle module.
     Relevant variables are stored in a dictionary, and then pickled.
@@ -94,6 +286,7 @@ def unpackProject(filename):
         raise BaseException("Could not unpack the project file, check for file corruption")
     fin.close()
     return saveDict
+    
     
     
 def packProject(filename,saveDict):
@@ -140,8 +333,9 @@ def packProject(filename,saveDict):
             fout = open(filename,'w')
         except:
             raise IOError("Could not open file " + filename + " for saving")
-    else:
+    else: #if file already exists
         try:
+            #copy existing version, open fout
             fin = open(filename,'r')
             foutOld = open(filename+'.old','w')
             foutOld.write(fin.read())

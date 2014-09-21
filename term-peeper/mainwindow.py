@@ -8,7 +8,7 @@
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.18
-#  Modified: 2014.09.18
+#  Modified: 2014.09.21
 #
 ###############################################################################
 #
@@ -37,6 +37,8 @@ import modis
 import termpeeperIO
 
 ###############################################################################
+
+
 
 class PickerWidget(QtGui.QGraphicsView):
     """Widget for viewing and making picks"""
@@ -78,7 +80,7 @@ class PickerWidget(QtGui.QGraphicsView):
         #add new pixmap
         self.scene.addPixmap(self.imagePixmap)
         #scale as necessary
-        #?????
+        #????? how to do?
         
     def updateClassification(self,class_array):
         """Updates the representation of the classification"""
@@ -155,16 +157,23 @@ class MainWindowGui(QtGui.QMainWindow):
         self.projectSaveFileName = None #save file for the project
         self.projectName = None #name of the project
         self.outputDirectory = None #directory to save output
+        self.outputPrefix = None #prefix string for the output
         self.imageInputDirectory = None #directory where the imagery is located
         self.fileQueue = None #queue of files to process
-        self.fileQueueIndex = None #index of current file within the queue
-        self.imageName = None #filename of the image being classified       
+        self.fileQueueIndex = None #index of current file within the queue 
         self.imageXDimension = None #size (pixels) of image in X-direction
         self.imageYDimension = None #size (pixels) of image in Y-direction
         self.imageResolution = None #edge-length of pixels in real world
+        self.clipFile = None #clip file for masking the data
+        self.author = None #author of the project
+        self.glacier = None #glacier being studied
+        self.projectDescription = None #long description of the project
+        
+        
+        self.imageName = None #filename of the image being classified  
         self.classification = None #array of classification
         self.classificationSource = None #array of how classification determined
-       
+        
         
         ## STARTUP ##
         self.defaultSettings()
@@ -200,10 +209,15 @@ class MainWindowGui(QtGui.QMainWindow):
         """Create a new project, running the new project dialog"""
         print ("Starting new project dialog")
         #save file dialog
-        termpeeperIO.openNewProject()
+        fname = str( QtGui.QFileDialog.getSaveFileName(parent=None,
+                          caption="Create New Project",
+                          filter="term-peeper project file (*.tpp);;Any file (*)"))
+        #termpeeperIO.openNewProject()
+        self._NPW = termpeeperIO.NewProjectWizard(filename=fname)
         
-    
-    def slotOpenProject(self):
+        
+        
+    def slotOpenProject(self,filename=None):
         """Open and existing project
         
         Post
@@ -213,22 +227,28 @@ class MainWindowGui(QtGui.QMainWindow):
         current class.
         
         """
-        print ("Choose the project to open")
-        fname = str( QtGui.QFileDialog.getOpenFileName(parent=None,
-                      caption="Open Existing Project",
-                      filter="term-peeper project file (*.tpp);;Any file (*)"))
-        print (fname)
-        saveDict = termpeeperIO.unpackProject(fname)
-
+        if not filename:
+            print ("Choose the project to open")
+            filename = str( QtGui.QFileDialog.getOpenFileName(parent=None,
+                          caption="Open Existing Project",
+                          filter="term-peeper project file (*.tpp);;Any file (*)"))
+            print (filename)
+        saveDict = termpeeperIO.unpackProject(filename)
+        
         try:
             self.projectName = saveDict['projectname']
+            self.author = saveDict['author']
+            self.glacier = saveDict['glacier']
             self.fileQueue = saveDict['filequeue']
             self.fileQueueIndex = saveDict['filequeueindex']
             self.outputDirectory = saveDict['outputdirectory']
+            self.outputPrefix = saveDict['outputprefix']
+            self.projectDescription = saveDict['description']
             self.imageXDimension = saveDict['xdimension']
             self.imageYDimension = saveDict['ydimension']
             self.imageResolution = saveDict['imageresolution']
-            self.projectSaveFileName = fname
+            self.clipFile = saveDict['clipfile']
+            self.projectSaveFileName = filename  
         except:
             raise BaseException("Could not load all settings from project file, check project integrity")
     

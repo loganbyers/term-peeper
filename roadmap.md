@@ -82,11 +82,11 @@ Numbered Versions
 ---
 
 * Automatic classification scheme in place
-* Color choices on classification
-* Project integrity checks, dynamic projects
+* Classification styling -- color, pattern?
+* Project integrity checks, dynamic project queue
 
 0.3
 ---
 
-* Work flow developments
+* Work flow developments -- corroborating imagery, spatial files
 * Change analysis
