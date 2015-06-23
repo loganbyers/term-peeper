@@ -1,33 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-#
-#  term-peeper is a program for classifying MODIS imagery of glacier termini
-#  this file is part of term-peeper
-#
-#  Copyright 2014 Logan C Byers
-#
-#  Authors: Logan C Byers
-#  Contact: loganbyers@ku.edu
-#  Date: 2014.09.19
-#  Modified: 2014.09.21
-#
-###############################################################################
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
-# (at your option) any later version.
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
-#
-###############################################################################
-#
--->
 <ui version="4.0">
  <class>new_project_wizard_page_1</class>
  <widget class="QWizardPage" name="new_project_wizard_page_1">
@@ -36,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>640</width>
-    <height>480</height>
+    <height>479</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -129,20 +100,78 @@
        </layout>
       </item>
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <layout class="QVBoxLayout" name="verticalLayout_3">
         <item>
-         <widget class="QToolButton" name="importFileButton">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QToolButton" name="importFileButton">
+            <property name="text">
+             <string>Import Existing HDF</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QToolButton" name="downloadDataButton">
+            <property name="text">
+             <string>Download New Data</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_8">
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_10">
+            <item>
+             <widget class="QLabel" name="label_5">
+              <property name="text">
+               <string>EPSG code</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="epsgLineEdit">
+              <property name="text">
+               <string>3413</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item>
+           <layout class="QHBoxLayout" name="horizontalLayout_11">
+            <item>
+             <widget class="QLabel" name="label_6">
+              <property name="text">
+               <string>Pixel Size</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="pixelSizeLineEdit">
+              <property name="text">
+               <string>250</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <widget class="QLabel" name="label_4">
           <property name="text">
-           <string>Import Existing HDF</string>
+           <string>HDF Bands (comma separated)</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QToolButton" name="downloadDataButton">
-          <property name="text">
-           <string>Download New Data</string>
-          </property>
-         </widget>
+         <widget class="QLineEdit" name="hdfBandsLineEdit"/>
         </item>
        </layout>
       </item>

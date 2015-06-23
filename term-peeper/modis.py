@@ -3,12 +3,12 @@
 #  term-peeper is a program for classifying MODIS imagery of glacier termini
 #  this file is part of term-peeper
 #
-#  Copyright 2014 Logan C Byers
+#  Copyright 2014-2015 Logan C Byers
 #
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.18
-#  Modified: 2014.09.18
+#  Modified: 2014.06.14
 #
 ###############################################################################
 #
@@ -28,6 +28,8 @@
 #
 
 import os
+import subprocess
+
 from PyQt4 import QtGui, uic
 import pymodis
 
@@ -135,6 +137,9 @@ class DownloadMODISDialog(QtGui.QDialog):
         dm.connect()
         print "Connection Attempts: " + str(dm.nconnection)
         
+        print self.startDate, self.endDate
+        
+        
         #get all files to download, for each day of interest
         downloads = []
         for day in dm.getListDays():
@@ -155,3 +160,45 @@ class DownloadMODISDialog(QtGui.QDialog):
             self.progress.setValue(self.progress.value()+1)
             dm.downloadFile(f,self.downloadDirectory+f,d)
         
+        
+def clipRasterWithShape(inraster,outraster,shape):
+    subprocess.call(['gdalwarp', '-crop_to_cutline', '-cutline', shape,
+                     inraster, outraster])
+    
+def getShapefileBoundingBox(shape):
+    output = subprocess.check_output(['ogrinfo','-al','-so',shape]).split('\n')
+    for line in output:
+        if line[:7] == 'Extent:':
+            break
+    contents = line.split()
+    llx = float(contents[1][1:-1])
+    lly = float(contents[2][:-1])
+    urx = float(contents[4][1:-1])
+    ury = float(contents[5][:-1])
+    return llx, lly, urx, ury
+
+def clipRasterWithBox(inraster,outraster,xmin,ymin,xmax,ymax):
+    subprocess.call(['gdal_warp', '-te', str(xmin), str(ymin),
+                     str(xmax), str(ymax), inraster, outraster])
+
+def compositeRasterBandsToRGB(rasterList,outraster,
+                          xmin=None,ymin=None,xmax=None,ymax=None,
+                          inputNoData=None, outputNoData=None):
+    commands = ['gdal_merge.py','-co','PHOTOMETRIC=RGB','-separate']
+    commands.extend(rasterList)
+    if xmin is not None and ymin is not None and \
+       xmax is not None and ymax is not None:
+        commands.extend(['-ul_lr',str(xmin),str(ymax),str(xmax),str(ymin)])
+    if inputNoData is not None and outputNoData is not None:
+        commands.extend(['-n',str(inputNoData),'-a_nodata',str(outputNoData)])
+    commands.extend(['-o', outraster])
+    subprocess.call(commands)
+    
+def convertRasterTo8Bit(inraster,outraster):
+    commands = ['gdal_translate','-scale','-ot','Byte',inraster,outraster]
+    subprocess.call(commands)
+
+
+    
+    
+    

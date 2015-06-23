@@ -32,6 +32,7 @@ import os
 from PyQt4 import QtGui, uic
 
 import modis
+from pymodis import convertmodis_gdal as convertmodis
 
 ###############################################################################
 
@@ -52,6 +53,7 @@ class NewProjectWizard(QtGui.QWizard):
             default save file
             
         """
+        
         super(NewProjectWizard,self).__init__(parent)
         
         self.finished.connect(self.makeProject)
@@ -62,7 +64,10 @@ class NewProjectWizard(QtGui.QWizard):
         self.setFixedSize(660,520)
         self.show()
 
-        
+    def convertBandNumbersToSubsetList(self,bands):
+        bands = map(int,bands.split(','))
+        return [1 if k in bands else 0 for k in range(1,max(bands)+1)]
+      
     def makeProject(self):
         """Take values from wizard pages and make project file
         
@@ -86,21 +91,69 @@ class NewProjectWizard(QtGui.QWizard):
         saveDict['outputdirectory'] = self.introPage.outputDirLineEdit.text()
         saveDict['description'] = self.introPage.descriptionPlainTextEdit.toPlainText()
         saveDict['clipfile'] = self.imgPage.clipLineEdit.text()
+        saveDict['hdfbands'] = self.imgPage.hdfBandsLineEdit.text()
+        saveDict['epsg'] = self.imgPage.epsgLineEdit.text()
+        saveDict['pixelsize'] = self.imgPage.pixelSizeLineEdit.text()
         
         saveDict = {key : str(saveDict[key]) for key in saveDict.keys()}
-        fileQueue = []
+        hdfQueue = []
         for i in range(self.imgPage.fileListWidget.count()):
-            fileQueue.append(str(self.imgPage.fileListWidget.item(i).text()))
+            hdfQueue.append(str(self.imgPage.fileListWidget.item(i).text()))
+            #print fileQueue[-1]
+        
+        
+        packProject(saveDict['projectsavename'],saveDict)
+        
+        pathToFullImages = os.path.join(saveDict['outputdirectory'],'TEMP_GTIFF')
+        pathToFullImages = pathToFullImages + os.sep
+        if not os.path.exists(saveDict['outputdirectory']) and saveDict['outputdirectory']:
+            os.mkdir(saveDict['outputdirectory'])
+        if not os.path.exists(pathToFullImages):
+            os.mkdir(pathToFullImages)
+        bandsInOrder = map(int,saveDict['hdfbands'].split(','))
+        sortedBands = sorted(bandsInOrder)
+        bandRank = [sortedBands.index(v) for v in bandsInOrder]
+        
+        llx, lly, urx, ury = modis.getShapefileBoundingBox(saveDict['clipfile'])
+        fileQueue = []
+        
+        for f in hdfQueue:
+            hdfName = '.'.join( (os.path.split(f)[-1]).split('.')[:-1])
+            
+            con = convertmodis.convertModisGDAL(f,pathToFullImages,
+                               self.convertBandNumbersToSubsetList(saveDict['hdfbands']),
+                               int(saveDict['pixelsize']),'GTiff',epsg=int(saveDict['epsg']))
+            con.run()
+            
+            imagesInOrder = []
+            images = sorted(os.listdir(pathToFullImages))
+            for i in range(len(images)):
+                imagesInOrder.append(os.path.join(pathToFullImages,images[bandRank.index(i)]))
+            print imagesInOrder
+            RGBRaster = os.path.join(pathToFullImages,'RGB.tif')
+            clippedRaster = os.path.join(saveDict['outputdirectory'],saveDict['outputprefix']+hdfName+'.tif')
+            
+            modis.compositeRasterBandsToRGB(imagesInOrder,RGBRaster,llx,lly,urx,ury)
+            modis.convertRasterTo8Bit(RGBRaster,clippedRaster)
+            fileQueue.append(clippedRaster)
+            
+            for rm in os.listdir(pathToFullImages):
+                os.remove(os.path.join(pathToFullImages,rm))
+            
+            print hdfName
+        
+        os.rmdir(pathToFullImages)
+        
+        
         
         saveDict['filequeue'] = tuple(fileQueue)
         saveDict['filequeueindex'] = 0
         
-        #  add more info based on reading HDF xml
+        # image and tiff-based attributes
         saveDict['imageresolution'] = None
         saveDict['xdimension'] = None
         saveDict['ydimension'] = None
-
-        print saveDict
+        
         
         packProject(saveDict['projectsavename'],saveDict)
         pass
@@ -183,7 +236,7 @@ class NewProjectWizard(QtGui.QWizard):
             """Open file to clip the imagery to"""
             fname = str( QtGui.QFileDialog.getOpenFileName(parent=None,
                       caption="Open Mask File",
-                      filter="shapefile (.shp);;well-known type (.wkt);;Any file (*)"))
+                      filter="Any file (*);;shapefile (.shp);;well-known type (.wkt)"))
             self.clipLineEdit.setText(fname)
             pass
         
@@ -217,12 +270,11 @@ class NewProjectWizard(QtGui.QWizard):
                 raise IOError("Could not close image import file\n"
                               "Tried to close file\n"+fname)
             
-        
         def slotImportFiles(self):
             """Add existing MODIS HDF to the queue"""
             fnames = QtGui.QFileDialog.getOpenFileNames(parent=None,
                       caption="Open Files",
-                      filter="MODIS HDF (.hdf);;Any Files (*)")
+                      filter="MODIS HDF (hdf);;Any Files (*)")
             for f in fnames:
                 print f
             self.fileListWidget.addItems(fnames)

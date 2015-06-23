@@ -9,10 +9,10 @@ Design
 ======
 
 * Python as base language for interactions between modules.
-* GUI using Qt4, probably using PyQt as bindings
-* PyModis for handling MODIS acquisition, basic processing and clipping
-* Pillow for processing and conversion of images, some outputting of results
-* scikit-learn for classification of images
+* GUI using Qt4, using PyQt as bindings
+* PyModis and gdal for handling MODIS acquisition, basic processing and clipping
+* gdal for image output
+* scikit-learn for automatic classification of images
 
 Sub-tasks
 ==========
@@ -27,9 +27,9 @@ Data Acquisition
 Image Processing
 ----------------
 
-* Use PyModis and MRT to transform HDF into tiffs, project as necessary
-* Subset/superset bands and get all relevant bands into 250m resolution
-* Use published algorithms to make corrections for sun, clouds, shadows, etc
+* Use PyModis and gdal to transform HDF into tiffs, project as necessary
+* Subset/superset bands and get all relevant bands into chosen resolution
+* Use published algorithms to make corrections for sun, clouds, shadows, etc as needed
 * Generate masks for clouds and other things to help display
 
 
