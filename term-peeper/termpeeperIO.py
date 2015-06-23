@@ -3,12 +3,12 @@
 #  term-peeper is a program for classifying MODIS imagery of glacier termini
 #  this file is part of term-peeper
 #
-#  Copyright 2014 Logan C Byers
+#  Copyright 2014-2015 Logan C Byers
 #
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.18
-#  Modified: 2014.09.21
+#  Modified: 2014.09.23
 #
 ###############################################################################
 #
