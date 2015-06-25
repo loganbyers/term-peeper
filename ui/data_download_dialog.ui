@@ -4,12 +4,12 @@
 #  term-peeper is a program for classifying MODIS imagery of glacier termini
 #  this file is part of term-peeper
 #
-#  Copyright 2014 Logan C Byers
+#  Copyright 2014-2015 Logan C Byers
 #
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.17
-#  Modified: 2014.09.18
+#  Modified: 2015.06.25
 #
 ###############################################################################
 #
@@ -66,7 +66,7 @@
     <rect>
      <x>30</x>
      <y>0</y>
-     <width>591</width>
+     <width>606</width>
      <height>353</height>
     </rect>
    </property>
@@ -103,6 +103,26 @@
       </item>
       <item>
        <widget class="QLineEdit" name="tilesLineEdit"/>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="aquaCheckBox">
+        <property name="text">
+         <string>AQUA</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="terraCheckBox">
+        <property name="text">
+         <string>TERRA</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>

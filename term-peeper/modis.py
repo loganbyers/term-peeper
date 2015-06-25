@@ -74,6 +74,7 @@ class DownloadMODISDialog(QtGui.QDialog):
         self.downloadTile = None
         self.startDate = None
         self.endDate = None
+        self.products = None
     
     ### SLOT DEFINITIONS ###
     def slotSaveDirectoryToolButton(self):
@@ -111,11 +112,18 @@ class DownloadMODISDialog(QtGui.QDialog):
         self.tiles = str(self.tilesLineEdit.text())
         self.startDate = str(self.startDateCalendar.selectedDate().toString("yyyy-MM-dd"))
         self.endDate = str(self.endDateCalendar.selectedDate().toString("yyyy-MM-dd"))
+        self.products = []
+        if self.aquaCheckBox.isChecked():
+            self.products.append(('MOLA','MYD09GA.005'))
+        if self.aquaCheckBox.isChecked():
+            self.products.append(('MOLT','MOD09GA.005'))
         print self.downloadDirectory
         print self.tiles
+        print self.products
         print self.startDate
         print self.endDate
-        self.downloadData()
+        for product in self.products:
+            self.downloadData(*product)
         pass
     
     def slotRejected(self):
@@ -125,16 +133,17 @@ class DownloadMODISDialog(QtGui.QDialog):
     
 
     ### DOWNLOADING ###
-    def downloadData(self):
+    def downloadData(self,product_path,product_choice):
         """Download data to local directory"""
         if not os.path.exists(self.downloadDirectory):
             os.mkdir(self.downloadDirectory)
         #start and end seem reversed, but that is how pymodis works --backwards
         dm = pymodis.downmodis.downModis(destinationFolder=self.downloadDirectory,
-                                         path="MOLT", product="MOD09GA.005",
-                                         tiles="h16v01", today=self.endDate,
+                                         path=product_path, product=product_choice,
+                                         tiles=self.tiles, today=self.endDate,
                                          enddate = self.startDate)
         dm.connect()
+        print product_path, product_choice
         print "Connection Attempts: " + str(dm.nconnection)
         
         print self.startDate, self.endDate

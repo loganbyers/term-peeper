@@ -67,7 +67,8 @@ class NewProjectWizard(QtGui.QWizard):
     def convertBandNumbersToSubsetList(self,bands):
         bands = map(int,bands.split(','))
         return [1 if k in bands else 0 for k in range(1,max(bands)+1)]
-      
+    
+        
     def makeProject(self):
         """Take values from wizard pages and make project file
         
@@ -147,7 +148,6 @@ class NewProjectWizard(QtGui.QWizard):
         os.rmdir(pathToFullImages)
         
         
-        
         saveDict['filequeue'] = tuple(fileQueue)
         saveDict['filequeueindex'] = 0
         
@@ -225,6 +225,7 @@ class NewProjectWizard(QtGui.QWizard):
             self.fileListWidget.setDragEnabled(True)
             self.fileListWidget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
             self.removeListButton.clicked.connect(self.slotRemoveFromList)
+            self.sortButton.clicked.connect(self.slotSortList)
             
             self.clipOpenFileButton.clicked.connect(self.slotClipOpenFile)
             self.txtOpenFileButton.clicked.connect(self.slotTxtOpenFile)
@@ -232,7 +233,19 @@ class NewProjectWizard(QtGui.QWizard):
             self.importFileButton.clicked.connect(self.slotImportFiles)
             self.downloadDataButton.clicked.connect(self.slotDownloadData)
             
-            
+        def sortModisFilesByDate(self,fileList):
+            def sortKey(filename):
+                return filename.split('.')[1]
+            sortedByDate = sorted(fileList,key=sortKey)
+            for i in range(len(fileList)-1):
+                first = os.path.split(sortedByDate[i])[-1]
+                second = os.path.split(sortedByDate[i+1])[-1]
+                if sortKey(first) == sortKey(second):
+                    if first.split('.')[0] > second.split('.')[0]:
+                        swap = sortedByDate[i]
+                        sortedByDate[i] = sortedByDate[i+1]
+                        sortedByDate[i+1] = swap
+            return sortedByDate    
         
         def slotClipOpenFile(self):
             """Open file to clip the imagery to"""
@@ -276,10 +289,12 @@ class NewProjectWizard(QtGui.QWizard):
             """Add existing MODIS HDF to the queue"""
             fnames = QtGui.QFileDialog.getOpenFileNames(parent=None,
                       caption="Open Files",
-                      filter="MODIS HDF (hdf);;Any Files (*)")
-            for f in fnames:
+                      filter="MODIS HDF (.hdf);;Any Files (*)")
+            fnames_str = map(str,fnames)
+            fnames_sort = self.sortModisFilesByDate(fnames_str)
+            for f in fnames_sort:
                 print f
-            self.fileListWidget.addItems(fnames)
+            self.fileListWidget.addItems(fnames_sort)
             pass
         
         def slotDownloadData(self):
@@ -295,6 +310,15 @@ class NewProjectWizard(QtGui.QWizard):
                 print item
                 self.fileListWidget.takeItem(self.fileListWidget.row(item))
         
+        def slotSortList(self):
+            sortedList = []
+            for i in range(self.fileListWidget.count()):
+                sortedList.append(str(self.fileListWidget.item(i).text()))
+            self.fileListWidget.clear()
+            self.fileListWidget.addItems(self.sortModisFilesByDate(sortedList))
+            pass
+            
+            
             
 class ProjectIntegrityDialog(QtGui.QDialog):
     pass
