@@ -8,7 +8,7 @@
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.18
-#  Modified: 2014.06.23
+#  Modified: 2014.06.25
 #
 ###############################################################################
 #
@@ -162,7 +162,7 @@ class DownloadMODISDialog(QtGui.QDialog):
         
         
 def clipRasterWithShape(inraster,outraster,shape):
-    subprocess.call(['gdalwarp', '-crop_to_cutline', '-cutline', shape,
+    subprocess.call(['gdalwarp','-dstnodata','"65535 65535 65535"','-cutline', shape,
                      inraster, outraster])
     
 def getShapefileBoundingBox(shape):

@@ -65,17 +65,20 @@ Data Analysis
 * Plot
 
 
+
 Numbered Versions
 =================
 
 0.1
 ---
 
-* Download, process, clip, resample, project MODIS data
-* View, and manually classify imagery within a GUI
-* Load multiple files into a classification queue
-* Output raw classification results to files
-* Create new projects, open existing, save (as) current
+* Download, process, clip, resample, project MODIS data  -- DONE
+* View, and manually classify imagery within a GUI  -- DONE
+* Load multiple files into a classification queue  -- DONE
+* Output raw classification results to files  -- DONE
+* Create new projects, open existing, save (as) current  -- DONE
+* View region surrounding glacier in the right image panel
+* Cycle through images and review/change previous picks
 
 
 0.2

@@ -8,7 +8,7 @@
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.18
-#  Modified: 2014.09.23
+#  Modified: 2014.09.25
 #
 ###############################################################################
 #
@@ -131,10 +131,12 @@ class NewProjectWizard(QtGui.QWizard):
                 imagesInOrder.append(os.path.join(pathToFullImages,images[bandRank.index(i)]))
             print imagesInOrder
             RGBRaster = os.path.join(pathToFullImages,'RGB.tif')
+            RGBRaster8Bit = os.path.join(pathToFullImages,saveDict['outputprefix']+hdfName+'.tif')
             clippedRaster = os.path.join(saveDict['outputdirectory'],saveDict['outputprefix']+hdfName+'.tif')
             
             modis.compositeRasterBandsToRGB(imagesInOrder,RGBRaster,llx,lly,urx,ury)
-            modis.convertRasterTo8Bit(RGBRaster,clippedRaster)
+            modis.convertRasterTo8Bit(RGBRaster,RGBRaster8Bit)
+            modis.clipRasterWithShape(RGBRaster8Bit,clippedRaster,saveDict['clipfile'])
             fileQueue.append(clippedRaster)
             
             for rm in os.listdir(pathToFullImages):

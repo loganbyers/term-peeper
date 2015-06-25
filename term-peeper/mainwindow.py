@@ -8,7 +8,7 @@
 #  Authors: Logan C Byers
 #  Contact: loganbyers@ku.edu
 #  Date: 2014.09.18
-#  Modified: 2015.06.23
+#  Modified: 2015.06.25
 #
 ###############################################################################
 #
@@ -182,20 +182,24 @@ class PickerWidget(QtGui.QGraphicsView):
         col = scale * qpoint.x()
         print row, col
         return int(row), int(col)
-    
+      
+    def isNoDataLocation(self,pos):
+        return (self.imageArray[pos[1],pos[0],:3] == [255,255,255]).all()
+      
     def mousePressEvent(self,mouse):
         if not self.manualClassificationMode:
             return
         mousePosition = self.mapToScene(mouse.pos())  
         iy,ix = self.mousePositionToArray(mousePosition)
         if mouse.button() == QtCore.Qt.LeftButton:
-            self.classArray[iy,ix] = self.currentClassValue
+            if not self.isNoDataLocation((ix,iy)): 
+                self.classArray[iy,ix] = self.currentClassValue
         elif mouse.button() == QtCore.Qt.MiddleButton:
             print "middle"
         elif mouse.button() == QtCore.Qt.RightButton:
-            
-            self.floodFillClassification(self.classArray[iy,ix],self.currentClassValue,(ix,iy))
-            print "right"
+            if not self.isNoDataLocation((ix,iy)):
+                self.floodFillClassification(self.classArray[iy,ix],self.currentClassValue,(ix,iy))
+                print "right"
         self.classToARGB()
         self.updateClassDraw()
         print mousePosition
@@ -210,7 +214,7 @@ class PickerWidget(QtGui.QGraphicsView):
         while q:
             x,y = q[0]
             q = q[1:]
-            if self.classArray[y,x] == target:
+            if self.classArray[y,x] == target and not self.isNoDataLocation((x,y)):
                 self.classArray[y,x] = replace
                 if x != 0:
                     q.append((x-1,y))
@@ -506,6 +510,7 @@ class MainWindowGui(QtGui.QMainWindow):
         #reset settings
         print ("clearing changes to classification")
         self.defaultSettings()
+        self.imageView.initialize(self.fileQueue[self.fileQueueIndex])
        
     
     def slotSaveAlt(self):
